@@ -9,7 +9,19 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in! Try to get as close to 100% correctness across all runs as possible.
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """
+Act as a rigorous reasoning expert and solve the problem by following these steps:
+Generate at least 3 independent reasoning paths, with a complete step-by-step analysis for each path.
+List the final answer for each path.
+Count the occurrence frequency of each answer, determine the final answer in accordance with the majority voting principle, and output it.
+
+Output format:
+Reasoning Path 1: <Steps + Answer>
+Reasoning Path 2: <Steps + Answer>
+Reasoning Path 3: <Steps + Answer>
+Answer: <number>
+
+"""
 
 USER_PROMPT = """
 Solve this problem, then give the final answer on the last line as "Answer: <number>".

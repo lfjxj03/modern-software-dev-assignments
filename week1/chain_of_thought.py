@@ -8,7 +8,8 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = "You excel at mathematical expression calculation and provide step-by-step intermediate results " \
+                     "as required."
 
 
 USER_PROMPT = """

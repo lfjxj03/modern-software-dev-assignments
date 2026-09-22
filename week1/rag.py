@@ -8,12 +8,14 @@ load_dotenv()
 
 NUM_RUNS_TIMES = 5
 
+# 数据文件是：api_docs.txt，定义了一个简单的用户查询接口
 DATA_FILES: List[str] = [
     os.path.join(os.path.dirname(__file__), "data", "api_docs.txt"),
 ]
 
 
 def load_corpus_from_files(paths: List[str]) -> List[str]:
+    # Load corpus from several external files
     corpus: List[str] = []
     for p in paths:
         if os.path.exists(p):
@@ -37,11 +39,15 @@ QUESTION = (
 
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = "You are a Python coding assistant. Generate relevant Python code snippets based " \
+                     "on users' context, tasks and requirements. Output in Markdown fenced code block format " \
+                     "with the programming language indicated at the top. Only output the requested code snippets, " \
+                     "no other content."
 
 
 # For this simple example
 # For this coding task, validate by required snippets rather than exact string
+# 验证模型返回是否正确：只检查以下代码片段，不应要求完全的代码序列匹配
 REQUIRED_SNIPPETS = [
     "def fetch_user_name(",
     "requests.get",
@@ -53,13 +59,17 @@ REQUIRED_SNIPPETS = [
 
 def YOUR_CONTEXT_PROVIDER(corpus: List[str]) -> List[str]:
     """TODO: Select and return the relevant subset of documents from CORPUS for this task.
-
+    从语料库中选择相关文档，这里应当是根据问题选择。
     For example, return [] to simulate missing context, or [corpus[0]] to include the API docs.
     """
-    return []
+    # 检索corpus，搜索以API Reference开头的元素（前面可以有空格）
+    return [d for d in corpus if d.strip().startswith("API Reference")]
+
 
 
 def make_user_prompt(question: str, context_docs: List[str]) -> str:
+    """Build the user prompt for this task using question and context_docs.
+    """
     if context_docs:
         context_block = "\n".join(f"- {d}" for d in context_docs)
     else:
@@ -77,7 +87,7 @@ def make_user_prompt(question: str, context_docs: List[str]) -> str:
 
 
 def extract_code_block(text: str) -> str:
-    """Extract the last fenced Python code block, or any fenced code block, else return text."""
+    """Extract the last fenced Python code block（围栏Python代码块）, or any fenced code block, else return text."""
     # Try ```python ... ``` first
     m = re.findall(r"```python\n([\s\S]*?)```", text, flags=re.IGNORECASE)
     if m:
@@ -107,6 +117,7 @@ def test_your_prompt(system_prompt: str, context_provider: Callable[[List[str]],
         output_text = response.message.content
         code = extract_code_block(output_text)
         missing = [s for s in REQUIRED_SNIPPETS if s not in code]
+        # 如果所有片段都包含在代码中，则测试通过
         if not missing:
             print(output_text)
             print("SUCCESS")

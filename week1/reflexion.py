@@ -15,7 +15,9 @@ Keep the implementation minimal.
 """
 
 # TODO: Fill this in!
-YOUR_REFLEXION_PROMPT = ""
+YOUR_REFLEXION_PROMPT = "You are a programming assistant. Continuously refine the code according to the code generated " \
+                        "last time and the test results provided by the user as feedback. Return only " \
+                        "the revised code, no other content.Output in Markdown fenced code block format ."
 
 
 # Ground-truth test suite used to evaluate generated code
@@ -37,9 +39,10 @@ def extract_code_block(text: str) -> str:
         return m[-1].strip()
     return text.strip()
 
-
+# 从字符串中生成函数，主要通过exec执行函数定义代码，从而产生可调用的函数对象。
 def load_function_from_code(code_str: str) -> Callable[[str], bool]:
     namespace: dict = {}
+    # 动态执行字符串形式的 Python 代码，并将执行结果存储在指定的命名空间中。code_str中应当定义函数is_valid_password。
     exec(code_str, namespace)  # noqa: S102 (executing controlled code from model for exercise)
     func = namespace.get("is_valid_password")
     if not callable(func):
@@ -48,6 +51,7 @@ def load_function_from_code(code_str: str) -> Callable[[str], bool]:
 
 
 def evaluate_function(func: Callable[[str], bool]) -> Tuple[bool, List[str]]:
+    # 评估模型返回代码执行结果是否正确，错误的话给出错误信息
     failures: List[str] = []
     for pw, expected in TEST_CASES:
         try:
@@ -96,7 +100,11 @@ def your_build_reflexion_context(prev_code: str, failures: List[str]) -> str:
 
     Return a string that will be sent as the user content alongside the reflexion system prompt.
     """
-    return ""
+    reflex_context = f"""
+    Code：{prev_code}
+    Failures: {failures}
+    """
+    return reflex_context
 
 
 def apply_reflexion(
@@ -126,8 +134,8 @@ def run_reflexion_flow(
     # 1) Generate initial function
     initial_code = generate_initial_function(system_prompt)
     print("Initial code:\n" + initial_code)
-    func = load_function_from_code(initial_code)
-    passed, failures = evaluate_function(func)
+    func = load_function_from_code(initial_code)  # 从文本中生成函数对象
+    passed, failures = evaluate_function(func)  # 如果passed == True，则failures应当为空
     if passed:
         print("SUCCESS (initial implementation passed all tests)")
         return True
