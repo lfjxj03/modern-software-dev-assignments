@@ -1,0 +1,27 @@
+name: Issue Handler
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  handle-issue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add triage label
+        run: gh issue edit "$ISSUE_URL" --add-label "triage"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+
+      - name: Add comment
+        run: |
+          gh issue comment "$ISSUE_URL" \
+            --body "感谢提交 Issue！系统已经收到，我们会进行初步处理。"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
