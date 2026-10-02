@@ -13,6 +13,7 @@
       .item { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; }
       .muted { color: #6b7280; font-size: 0.875rem; }
       .row { display: flex; gap: 0.5rem; align-items: center; }
+      .error { color: #b91c1c; }
     </style>
   </head>
   <body>
@@ -24,6 +25,8 @@
     <div class="row">
       <label class="row"><input id="save_note" type="checkbox" checked /> Save as note</label>
       <button id="extract">Extract</button>
+      <button id="extract_llm">Extract LLM</button>
+      <button id="list_notes">List Notes</button>
     </div>
 
     <div class="items" id="items"></div>
@@ -32,43 +35,145 @@
       const $ = (sel) => document.querySelector(sel);
       const itemsEl = $('#items');
       const btn = $('#extract');
-      btn.addEventListener('click', async () => {
+      const btnLlm = $('#extract_llm');
+      const btnListNotes = $('#list_notes');
+
+      function parseJsonResponse(raw) {
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+
+      function formatErrorDetail(data) {
+        if (!data) return 'Request failed';
+        if (typeof data.detail === 'string') return data.detail;
+        if (Array.isArray(data.detail)) {
+          return data.detail
+            .map((e) => (e && typeof e.msg === 'string' ? e.msg : JSON.stringify(e)))
+            .join('; ');
+        }
+        return 'Request failed';
+      }
+
+      function renderItems(data) {
+        itemsEl.replaceChildren();
+        if (!data.items || data.items.length === 0) {
+          const p = document.createElement('p');
+          p.className = 'muted';
+          p.textContent = 'No action items found.';
+          itemsEl.appendChild(p);
+          return;
+        }
+        for (const it of data.items) {
+          const div = document.createElement('div');
+          div.className = 'item';
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.dataset.id = String(it.id);
+          const span = document.createElement('span');
+          span.textContent = it.text;
+          div.append(input, span);
+          itemsEl.appendChild(div);
+
+          input.addEventListener('change', async (e) => {
+            const target = e.target;
+            const id = target.dataset.id;
+            const res = await fetch(`/action-items/${id}/done`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ done: target.checked }),
+            });
+            const raw = await res.text();
+            const body = parseJsonResponse(raw);
+            if (!res.ok) {
+              target.checked = !target.checked;
+              const msg = formatErrorDetail(body) || raw || 'Failed to update item';
+              console.warn('Mark done failed:', msg);
+            }
+          });
+        }
+      }
+
+      function showError(msg) {
+        itemsEl.replaceChildren();
+        const p = document.createElement('p');
+        p.className = 'error';
+        p.textContent = msg;
+        itemsEl.appendChild(p);
+      }
+
+      async function extractFrom(url) {
         const text = $('#text').value;
         const save = $('#save_note').checked;
         itemsEl.textContent = 'Extracting...';
         try {
-          const res = await fetch('/action-items/extract', {
+          const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, save_note: save }),
           });
-          if (!res.ok) throw new Error('Request failed');
-          const data = await res.json();
-          if (!data.items || data.items.length === 0) {
-            itemsEl.innerHTML = '<p class="muted">No action items found.</p>';
+          const raw = await res.text();
+          const data = parseJsonResponse(raw);
+          if (!res.ok) {
+            showError(formatErrorDetail(data) || raw || 'Request failed');
             return;
           }
-          itemsEl.innerHTML = data.items.map(it => (
-            `<div class="item"><input type="checkbox" data-id="${it.id}" /> <span>${it.text}</span></div>`
-          )).join('');
-          itemsEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', async (e) => {
-              const id = e.target.getAttribute('data-id');
-              await fetch(`/action-items/${id}/done`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ done: e.target.checked }),
-              });
-            });
-          });
+          if (!data) {
+            itemsEl.textContent = 'Invalid response from server';
+            return;
+          }
+          renderItems(data);
         } catch (err) {
           console.error(err);
           itemsEl.textContent = 'Error extracting items';
         }
-      });
+      }
 
+      function renderNotes(notes) {
+        itemsEl.replaceChildren();
+        if (!notes || notes.length === 0) {
+          const p = document.createElement('p');
+          p.className = 'muted';
+          p.textContent = 'No notes found.';
+          itemsEl.appendChild(p);
+          return;
+        }
+        for (const note of notes) {
+          const div = document.createElement('div');
+          div.className = 'item';
+          const span = document.createElement('span');
+          span.textContent = `#${note.id} (${note.created_at}) ${note.content}`;
+          div.append(span);
+          itemsEl.appendChild(div);
+        }
+      }
+
+      btn.addEventListener('click', () => extractFrom('/action-items/extract'));
+      btnLlm.addEventListener('click', () => extractFrom('/action-items/extract-llm'));
+      btnListNotes.addEventListener('click', async () => {
+        itemsEl.textContent = 'Loading notes...';
+        try {
+          const res = await fetch('/notes');
+          const raw = await res.text();
+          const data = parseJsonResponse(raw);
+          if (!res.ok) {
+            showError(formatErrorDetail(data) || raw || 'Request failed');
+            return;
+          }
+          if (!Array.isArray(data)) {
+            itemsEl.textContent = 'Invalid response from server';
+            return;
+          }
+          renderNotes(data);
+        } catch (err) {
+          console.error(err);
+          itemsEl.textContent = 'Error listing notes';
+        }
+      });
     </script>
   </body>
   </html>
-
 

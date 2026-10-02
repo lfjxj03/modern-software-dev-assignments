@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "d:\\workcode"
+      ]
+    },
+    "open-meteo": {
+      "command": "C:\\Users\\think\\.conda\\envs\\cs146s\\python.exe",
+      "args": ["-m", "week3.server.main"],
+      "cwd": "d:\\workcode\\cs146s\\modern-software-dev-assignments"
+    }
+  }
+}

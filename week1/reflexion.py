@@ -15,18 +15,28 @@ Keep the implementation minimal.
 """
 
 # TODO: Fill this in!
-YOUR_REFLEXION_PROMPT = "You are a programming assistant. Continuously refine the code according to the code generated " \
-                        "last time and the test results provided by the user as feedback. Return only " \
-                        "the revised code, no other content.Output in Markdown fenced code block format ."
+YOUR_REFLEXION_PROMPT = """
+You are a programming assistant. Continuously refine the code according to the code generated 
+last time and the test results provided by the user as feedback.
+Your job:
+    1. Read every failure entry—do not stop after fixing the first one.
+    2. For each failure, use the input, expected vs actual result, and "Failing checks" to identify what the code is missing or doing wrong.
+    3. Revise the code so that all listed failures would be resolved in one updated implementation.
+    4. Keep any logic that is already correct; only add or adjust what the failures indicate.
+Before outputting, mentally verify your revision against each failure in the list.
+Return only the revised code in a single Markdown fenced Python code block. No explanations or comments.
+"""
 
 
 # Ground-truth test suite used to evaluate generated code
+# 密码应当包含：大小写字母，数字，特殊字符
 SPECIALS = set("!@#$%^&*()-_")
 TEST_CASES: List[Tuple[str, bool]] = [
     ("Password1!", True),       # valid
     ("password1!", False),      # missing uppercase
     ("Password!", False),       # missing digit
     ("Password1", False),       # missing special
+    ("Pass", False),            # length < 8
 ]
 
 
@@ -41,10 +51,11 @@ def extract_code_block(text: str) -> str:
 
 # 从字符串中生成函数，主要通过exec执行函数定义代码，从而产生可调用的函数对象。
 def load_function_from_code(code_str: str) -> Callable[[str], bool]:
-    namespace: dict = {}
+    namespace: dict = {}  # 用于存储代码中定义的函数对象
     # 动态执行字符串形式的 Python 代码，并将执行结果存储在指定的命名空间中。code_str中应当定义函数is_valid_password。
+    # noqa:no quality assurance，不进行代码质量检查。静态检查工具知道这里有「执行动态代码」的风险；
     exec(code_str, namespace)  # noqa: S102 (executing controlled code from model for exercise)
-    func = namespace.get("is_valid_password")
+    func = namespace.get("is_valid_password")  # 从命名空间中获取函数对象
     if not callable(func):
         raise ValueError("No callable is_valid_password found in generated code")
     return func
@@ -62,6 +73,8 @@ def evaluate_function(func: Callable[[str], bool]) -> Tuple[bool, List[str]]:
 
         if result != expected:
             # Compute diagnostic based on ground-truth rules
+            # 根据密码长度、大小写字母、数字、特殊字符、空格等规则，生成失败原因
+            # 可能同时违反多个规则，因此reasons列表中可能包含多个原因
             reasons = []
             if len(pw) < 8:
                 reasons.append("length < 8")
@@ -80,7 +93,7 @@ def evaluate_function(func: Callable[[str], bool]) -> Tuple[bool, List[str]]:
                 f"Input: {pw} → expected {expected}, got {result}. Failing checks: {', '.join(reasons) or 'unknown'}"
             )
 
-    return (len(failures) == 0, failures)
+    return (len(failures) == 0, failures)  # 返回的第一个字段为是否通过测试，第二个字段为失败原因列表
 
 
 def generate_initial_function(system_prompt: str) -> str:
@@ -90,7 +103,7 @@ def generate_initial_function(system_prompt: str) -> str:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": "Provide the implementation now."},
         ],
-        options={"temperature": 0.2},
+        options={"temperature": 0.2},  # 模型输出随机性较低
     )
     return extract_code_block(response.message.content)
 

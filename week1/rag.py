@@ -47,7 +47,7 @@ YOUR_SYSTEM_PROMPT = "You are a Python coding assistant. Generate relevant Pytho
 
 # For this simple example
 # For this coding task, validate by required snippets rather than exact string
-# 验证模型返回是否正确：只检查以下代码片段，不应要求完全的代码序列匹配
+# 验证模型返回是否正确：只检查以下代码片段，不要求完全的代码序列匹配
 REQUIRED_SNIPPETS = [
     "def fetch_user_name(",
     "requests.get",
@@ -57,6 +57,7 @@ REQUIRED_SNIPPETS = [
 ]
 
 
+# 模拟语料检索过程。实际应用中可能是根据问题从向量数据库中检索相关文档
 def YOUR_CONTEXT_PROVIDER(corpus: List[str]) -> List[str]:
     """TODO: Select and return the relevant subset of documents from CORPUS for this task.
     从语料库中选择相关文档，这里应当是根据问题选择。
@@ -69,6 +70,7 @@ def YOUR_CONTEXT_PROVIDER(corpus: List[str]) -> List[str]:
 
 def make_user_prompt(question: str, context_docs: List[str]) -> str:
     """Build the user prompt for this task using question and context_docs.
+    构造用户提示词，使用问题和语料库中检索出的相关文档构建用户提示词。提示词要求模型使用语料库中的信息回答问题，并返回符合要求的Python代码片段。
     """
     if context_docs:
         context_block = "\n".join(f"- {d}" for d in context_docs)
@@ -92,7 +94,7 @@ def extract_code_block(text: str) -> str:
     m = re.findall(r"```python\n([\s\S]*?)```", text, flags=re.IGNORECASE)
     if m:
         return m[-1].strip()
-    # Fallback to any fenced code block
+    # Fallback to any fenced code block，匹配任意围栏代码块，不是Python代码块
     m = re.findall(r"```\n([\s\S]*?)```", text)
     if m:
         return m[-1].strip()

@@ -8,7 +8,8 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = "You excel at mathematical expression calculation and provide step-by-step intermediate results " \
+YOUR_SYSTEM_PROMPT = ""
+tempt = "You excel at mathematical expression calculation and provide step-by-step intermediate results " \
                      "as required."
 
 
@@ -34,6 +35,7 @@ def extract_final_answer(text: str) -> str:
     if matches:
         value = matches[-1].strip()
         # Prefer a numeric normalization when possible (supports integers/decimals)
+        # （？表示非捕获组
         num_match = re.search(r"-?\d+(?:\.\d+)?", value.replace(",", ""))
         if num_match:
             return f"Answer: {num_match.group(0)}"
@@ -57,6 +59,7 @@ def test_your_prompt(system_prompt: str) -> bool:
             options={"temperature": 0.3},
         )
         output_text = response.message.content
+        # print(output_text)
         final_answer = extract_final_answer(output_text)
         if final_answer.strip() == EXPECTED_OUTPUT.strip():
             print("SUCCESS")

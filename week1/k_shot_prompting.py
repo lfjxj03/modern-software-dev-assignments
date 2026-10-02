@@ -6,43 +6,31 @@ load_dotenv()
 
 NUM_RUNS_TIMES = 5
 
-# TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = "You are a text processing assistant that can process input text according to user requirements " \
-                     "and output text that meets the requirements. The output text does not have to be legal words or " \
-                     "sentences, as long as it complies with the user's requests."
+YOUR_SYSTEM_PROMPT = """Reverse the word one character at a time (last → first). One line only; same length as input.
+
+Reverse the order of letters in the following word. Only output the reversed word, no other text:
+
+http
+ptth
+
+Reverse the order of letters in the following word. Only output the reversed word, no other text:
+
+status
+sutats
+
+Reverse the order of letters in the following word. Only output the reversed word, no other text:
+
+psta
+atsp
+
+The next user message is the same format—output only the reversed word.
+"""
 
 USER_PROMPT = """
 Reverse the order of letters in the following word. Only output the reversed word, no other text:
 
 httpstatus
-
-Verify the output to ensure the original input word is fully recovered by reversing the output a second time.
-Here are some examples:
-<example>
-Given original word "wonderful",return reversed word "lufrednow".
-</example>
-
-<example>
-Given original word "help",return reversed word "pleh".
-</example>
-
-<example>
-Given original word "ftp",return reversed word "ptf".
-</example>
 """
-
-#"""
-#Reverse the order of letters in the following word. Only output the reversed word, no other text:
-#
-#httpstatus
-#
-
-# Here are some examples:
-# <example>
-# Given original word "wonderful",return reversed word "lufrednow".
-# Given original word "Help",return reversed word "pleH*".
-# Given original word "Help",return reversed word "pleH*".
-# </example>"""
 
 
 EXPECTED_OUTPUT = "sutatsptth"
@@ -56,12 +44,12 @@ def test_your_prompt(system_prompt: str) -> bool:
     for idx in range(NUM_RUNS_TIMES):
         print(f"Running test {idx + 1} of {NUM_RUNS_TIMES}")
         response = chat(
-            model="mistral-nemo:12b",
+            model="mistral-nemo:12b", #  "gemma3:4b",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": USER_PROMPT},
             ],
-            options={"temperature": 0.3},
+            options={"temperature": 0.5},
         )
         output_text = response.message.content.strip()
         if output_text.strip() == EXPECTED_OUTPUT.strip():

@@ -6,7 +6,7 @@ from ollama import chat
 
 load_dotenv()
 
-NUM_RUNS_TIMES = 5
+NUM_RUNS_TIMES = 5  # 多次运行模型，获取多个答案，然后进行多数投票确定最终答案
 
 # TODO: Fill this in! Try to get as close to 100% correctness across all runs as possible.
 YOUR_SYSTEM_PROMPT = """
@@ -43,12 +43,12 @@ def extract_final_answer(text: str) -> str:
     """
     matches = re.findall(r"(?mi)^\s*answer\s*:\s*(.+)\s*$", text)
     if matches:
-        value = matches[-1].strip()
+        value = matches[-1].strip()  # 提示词要求给出每一个探索的结果，最后给出投票的答案，因此这里返回最后一个匹配的答案
         num_match = re.search(r"-?\d+(?:\.\d+)?", value.replace(",", ""))
         if num_match:
-            return f"Answer: {num_match.group(0)}"
-        return f"Answer: {value}"
-    return text.strip()
+            return f"Answer: {num_match.group(0)}"  # 返回匹配的数字
+        return f"Answer: {value}"  # 返回匹配的文本
+    return text.strip()  # 返回原始文本
 
 
 def test_your_prompt(system_prompt: str) -> bool:
@@ -65,7 +65,7 @@ def test_your_prompt(system_prompt: str) -> bool:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": USER_PROMPT},
             ],
-            options={"temperature": 1},
+            options={"temperature": 0.8},
         )
         output_text = response.message.content
         final_answer = extract_final_answer(output_text)
@@ -77,7 +77,7 @@ def test_your_prompt(system_prompt: str) -> bool:
         return False
 
     counts = Counter(answers)
-    majority_answer, majority_count = counts.most_common(1)[0]
+    majority_answer, majority_count = counts.most_common(1)[0]  # 如果出现次数最多的答案有不止一个，则返回第一个
     print(f"Majority answer: {majority_answer} ({majority_count}/{len(answers)})")
 
     if majority_answer.strip() == EXPECTED_OUTPUT.strip():
