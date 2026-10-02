@@ -13,7 +13,9 @@ jobs:
 
     steps:
       - name: Add triage label
-        run: gh issue edit "$ISSUE_URL" --add-label "triage"
+        run: |
+          gh label create triage --color "fbca04" --description "Needs triage" --force
+          gh issue edit "$ISSUE_URL" --add-label "triage"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
