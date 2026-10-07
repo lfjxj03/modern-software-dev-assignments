@@ -20,6 +20,7 @@ app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.on_event("startup")
 def startup_event() -> None:
+    # Create database tables and apply seed data if needed
     Base.metadata.create_all(bind=engine)
     apply_seed_if_needed()
 

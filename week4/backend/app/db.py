@@ -12,6 +12,7 @@ load_dotenv()
 DEFAULT_DB_PATH = os.getenv("DATABASE_PATH", "./data/app.db")
 
 engine = create_engine(f"sqlite:///{DEFAULT_DB_PATH}", connect_args={"check_same_thread": False})
+# SessionLocal is a factory for creating new Session objects.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

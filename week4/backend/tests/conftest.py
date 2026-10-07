@@ -16,24 +16,35 @@ def client() -> Generator[TestClient, None, None]:
     db_fd, db_path = tempfile.mkstemp()
     os.close(db_fd)
 
-    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base.metadata.create_all(bind=engine)
+    engine = None
+    previous_override = app.dependency_overrides.get(get_db)
+    try:
+        engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
+        TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        Base.metadata.create_all(bind=engine)
 
-    def override_get_db():
-        session = TestingSessionLocal()
+        def override_get_db():
+            session = TestingSessionLocal()
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+            finally:
+                session.close()
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with TestClient(app) as c:
+            yield c
+    finally:
         try:
-            yield session
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
+            if engine is not None:
+                engine.dispose()
         finally:
-            session.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    with TestClient(app) as c:
-        yield c
-
-    os.unlink(db_path)
+            if previous_override is None:
+                app.dependency_overrides.pop(get_db, None)
+            else:
+                app.dependency_overrides[get_db] = previous_override
+            os.unlink(db_path)

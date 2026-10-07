@@ -24,5 +24,6 @@ class ActionItemRead(BaseModel):
     description: str
     completed: bool
 
+    # 配置模型，允许从 SQLAlchemy 模型实例创建该模式的实例
     class Config:
         from_attributes = True

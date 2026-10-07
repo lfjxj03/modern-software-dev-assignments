@@ -85,24 +85,6 @@ Each week builds upon previous weeks, so you may need to:
 - Pull required Ollama models: `ollama pull mistral-nemo:12b` and `ollama pull llama3.1:8b`
 - Run week-specific assignments as outlined in each week's `assignment.md`
 
-## Key Architecture Patterns
-
-### API Structure
-- RESTful endpoints using FastAPI
-- SQLAlchemy models and Pydantic schemas for data validation
-- Dependency injection for database sessions
-- Router modules organized in `routers/` directory
-
-### Database Layer
-- SQLite with SQLAlchemy ORM
-- Alembic-style migrations handled in `db.py`
-- Session management through dependency injection
-
-### Frontend Integration
-- Static file serving via FastAPI's StaticFiles
-- Direct JavaScript calling backend API endpoints
-- No build tools - pure HTML/CSS/JS served statically
-
 ## Development Workflow Notes
 
 - Each week introduces new concepts while building on previous weeks
@@ -114,6 +96,10 @@ Each week builds upon previous weeks, so you may need to:
 ## Troubleshooting
 
 - Make sure to activate the correct Python environment before running commands
-- Ollama must be running (`ollama serve`) when working with AI-powered features
 - Ensure the PYTHONPATH is set correctly when running commands from different directories
-- Use the Makefiles in each week directory as the primary interface for development commands
+
+## 交互语言
+
+- 默认使用简体中文与用户交流。
+- 用户明确要求使用其他语言时，才切换语言。
+- 代码、命令、API 名称、文件名、技术术语保持其原始形式。
