@@ -14,7 +14,11 @@ jobs:
     steps:
       - name: Add triage label
         run: |
+<<<<<<< HEAD
           gh issue edit "$ISSUE_URL" --add-label "bug"  # 这里打bug标签是为了测试工作流是否正常工作
+=======
+          gh issue edit "$ISSUE_URL" --add-label "bug"
+>>>>>>> 7e902110b81a6b83e4de0a75b5025e508b4a3e5b
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
